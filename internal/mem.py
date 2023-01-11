@@ -1,4 +1,19 @@
 # from internal.database import Category
+from random import randint, choice
+
+some_items = ["Скраб", "Тоник", "Средство для лица", "Тушь", "Мыло обычное", "Шампунь какая то марка"]
+users = []
+
+def login(uuid):
+    user = None
+    for u in users:
+        if u.uuid == uuid:
+            user = u
+    if not user:
+        user = User(uuid)
+        users.append(user)
+    return user
+
 
 class Category:
     def __init__(self, _id, title):
@@ -14,15 +29,15 @@ class Item:
         self.price = price
 
 class User:
-    basket = []
     def __init__(self, uuid):
         self.uuid = uuid
+        self.basket = []
 
     def to_basket(self, item):
         self.basket.append(item)
 
     def get_basket(self):
-        return self.basket
+        return self.basket 
 
 class Menu:
     categories = []
@@ -38,7 +53,7 @@ class Menu:
         self.categories[3].emoji = "🎁"
 
     def refresh_items(self):
-        self.items = [Item(i, f"item_{i}", 3, 2500) for i in range(0, 19)] # TODO
+        self.items = [Item(i, f"{choice(some_items)}", 3, randint(200, 2500)) for i in range(0, 19)] # TODO
 
     # TODO
     def get_cat_by_id(self, category_id):
@@ -62,4 +77,3 @@ class Menu:
 
 
 menu = Menu()
-users = []

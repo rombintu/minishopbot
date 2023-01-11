@@ -97,11 +97,14 @@ def servers_callback(c: types.CallbackQuery):
             category_id = int(data[-2])
             item_id = int(data[-1])
             item = mem.menu.get_item_by_id(category_id, item_id)
-            user = mem.User(uuid=c.from_user.id)
+            user = mem.login(c.from_user.id)
             # TODO
-            user.basket.append(item)
-            if user not in mem.users: 
-                mem.users.append(user)
+            user.to_basket(item)
+            # bot.edit_message_reply_markup(
+            #     c.from_user.id, c.message.id, 
+            #     reply_markup=c.message.reply_markup.
+                    
+            # )
             return
             
         # case ["item", "id", _]:
@@ -111,13 +114,7 @@ def servers_callback(c: types.CallbackQuery):
 
 @bot.message_handler(commands=['basket'])
 def handle_message_menu(message):
-    user = None
-    for u in mem.users:
-        if u.uuid == message.chat.id:
-            user = u
-    if not user:
-        user = mem.User(message.chat.id)
-        mem.users.append(user)
+    user = mem.login(message.chat.id)
     basket = user.get_basket()
     if not basket:
         bot.send_message(message.chat.id, "Корзина пуста")
