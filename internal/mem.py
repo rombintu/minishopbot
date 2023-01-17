@@ -21,20 +21,46 @@ class Category:
         self.title = title
         self.emoji = ""
 
+rand_capacity = ["x1", "400ml", "950ml"] # TODO
 class Item:
     def __init__(self, _id, title, category_id, price):
         self._id = _id
         self.title = title
         self.category_id = category_id
         self.price = price
+        self.capacity = choice(rand_capacity)
+
+class Basket:
+    def __init__(self, uuid):
+        self.user_id = uuid
+        self.items = []
+
+    def get_items(self):
+        return self.items
+
+    def sum(self):
+        s = 0
+        for item in self.get_items():
+            s += item.price
+        return s
+
+    def get_content(self):
+        if not self.get_items():
+            return "Корзина пуста"
+        else:
+            return f"Итого: {self.sum()} ₽"
+
+    def add_items(self, item):
+        self.items.append(item)
+
 
 class User:
     def __init__(self, uuid):
         self.uuid = uuid
-        self.basket = []
+        self.basket = Basket(self.uuid)
 
     def to_basket(self, item):
-        self.basket.append(item)
+        self.basket.add_items(item)
 
     def get_basket(self):
         return self.basket 

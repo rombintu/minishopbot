@@ -1,5 +1,7 @@
 from datetime import datetime as dt
 
+markdown = "markdown"
+
 messages = {
     "start" : "Hello",
     "categories": "Выберите категорию"
