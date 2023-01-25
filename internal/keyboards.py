@@ -57,30 +57,34 @@ def get_keyboard_items(items, category_id, start_i=0):
 
 def get_keyboard_basket(basket, start_i=0):
     keyboard = types.InlineKeyboardMarkup()
-    btn_refresh = types.InlineKeyboardButton(text="🔄", callback_data=f"refresh_basket_{basket.user_id}")
+    btn_refresh = types.InlineKeyboardButton(text="🔄", callback_data="refresh_basket")
+    btn_create_order = types.InlineKeyboardButton(text="Оформить 📩", callback_data=f"basket_order_create_{basket.user_id}")
     items = basket.get_items()
     if not items:
         keyboard.add(btn_refresh)
         return keyboard
-    btn_next_r = types.InlineKeyboardButton(text="➡️", callback_data=f"basket_{basket.user_id}_{start_i+items_on_page}_>")
-    btn_next_l = types.InlineKeyboardButton(text="⬅️", callback_data=f"basket_{basket.user_id}_{start_i-items_on_page}_>")
+    btn_next_r = types.InlineKeyboardButton(text="➡️", callback_data=f"basket_{start_i+items_on_page}_>")
+    btn_next_l = types.InlineKeyboardButton(text="⬅️", callback_data=f"basket_{start_i-items_on_page}_>")
     for i in range(start_i, start_i + items_on_page):
         if i == len(basket.items): break
         keyboard.add(
             types.InlineKeyboardButton( 
                  text=f"{items[i].title}", 
-                callback_data=f"basket_{basket.user_id}_{items[i]._id}"),
+                callback_data=f"basket_{items[i]._id}"),
             types.InlineKeyboardButton(
                 text=f"{items[i].capacity} 📦 {items[i].price:,} ₽", 
-                callback_data=f"basket_{basket.user_id}_{items[i]._id}")
+                callback_data=f"basket_{items[i]._id}")
             )
 
     if start_i == 0 and start_i + items_on_page >= len(items):
-        keyboard.add(btn_refresh)
+        keyboard.add(btn_create_order, btn_refresh)
     elif start_i + items_on_page >= len(items): 
         keyboard.add(btn_next_l, btn_refresh)
+        keyboard.add(btn_create_order)
     elif start_i == 0: 
         keyboard.add(btn_refresh, btn_next_r)
+        keyboard.add(btn_create_order)
     else: 
         keyboard.add(btn_next_l, btn_refresh, btn_next_r)
+        keyboard.add(btn_create_order)
     return keyboard
