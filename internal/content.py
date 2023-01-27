@@ -3,7 +3,7 @@ from datetime import datetime as dt
 markdown = "markdown"
 
 messages = {
-    "start" : "Hello",
+    "start" : "/shop",
     "categories": "Выберите категорию"
 }
 
