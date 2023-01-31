@@ -1,6 +1,8 @@
 import unittest
 from internal.store.shop import Shop, Item, Category, User
 from bson import ObjectId
+import io
+from PIL import Image
 
 shop = Shop("mongodb://admin:admin@localhost")
 
@@ -18,8 +20,15 @@ class TestMain(unittest.TestCase):
         print(shop.categories, shop.items)
 
     def test_create_item(self):
-        for i in range(1,20):
-            shop.item_create(Item(title=f"item{i+1}", category_title=f"cat5", price=100))
+        image_data = io.BytesIO()
+        image = Image.open("./images/image.png")
+        image.save(image_data, format="PNG")
+        shop.item_create(
+            Item(
+                title="item_testing", category_title="cat18", 
+                price=1250, photo=image_data.getvalue(), description="testing1\ntesting2"
+                )
+            )
 
     def test_create_category(self):
         for i in range(1,20):

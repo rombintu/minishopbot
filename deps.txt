@@ -3,6 +3,7 @@ charset-normalizer==2.1.1
 dnspython==2.3.0
 greenlet==2.0.1
 idna==3.4
+Pillow==9.4.0
 pymongo==4.3.3
 pyTelegramBotAPI==4.8.0
 python-dotenv==0.21.0

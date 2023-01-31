@@ -4,19 +4,6 @@ from datetime import datetime
 from internal.logger import new_logger 
 from bson import ObjectId
 
-class User:
-    def __init__(self, uuid=0, username="", _id=ObjectId()):
-        self._id = _id
-        self.uuid = uuid
-        self.username = username
-        self.basket = Basket(self.uuid)
-
-    def to_basket(self, element):
-        self.basket.add_element(element)
-
-    def get_basket(self):
-        return self.basket 
-
 
 class Category:
     def __init__(self, title, emoji, _id=ObjectId()):
@@ -27,8 +14,8 @@ class Category:
 class Item:
     def __init__(
             self, title="", category_title="",
-            price=0, capacity="x1", picture="", 
-            description="", _id=ObjectId()
+            price=0, capacity="x1", photo="", 
+            description="", stars=0, _id=ObjectId()
         ):
         self._id = _id
         self.title = title
@@ -36,8 +23,8 @@ class Item:
         # self.category_id = category_id
         self.price = price
         self.capacity = capacity
-        self.stars = 0
-        self.picture = picture
+        self.stars = stars
+        self.photo = photo
         self.description = description
 
 class Basket:
@@ -47,6 +34,9 @@ class Basket:
 
     def get_elements(self):
         return self.elements
+
+    def get_elements_ids(self):
+        return [{str(elem["id"]): elem["count"]} for elem in self.get_elements()]
 
     def sum(self):
         s = 0
@@ -72,6 +62,11 @@ class Basket:
             "count": 1,
             }
         )
+
+    def remove(self, element_id: Item):
+        for i, el in enumerate(self.get_elements()):
+            if el["id"] == ObjectId(element_id):
+                self.elements.pop(i)
     # def remove_element(self, _id):
     #     for el in self.get_elements():
     #         if el["id"] == _id:
@@ -80,11 +75,33 @@ class Basket:
     def clear(self):
         self.elements = []
 
-class Order(Basket):
-    def __init__(self, uuid):
-        super().__init__(uuid)
+class Order:
+    def __init__(self, uuid, items):
+        self.uuid = uuid
+        self.items = items
         self.create_at = datetime.now()
         self.completed_at = None
+
+class User:
+    def __init__(self, uuid=0, username="", _id=ObjectId()):
+        self._id = _id
+        self.uuid = uuid
+        self.username = username
+        self.basket = Basket(self.uuid)
+
+    def to_basket(self, element):
+        self.basket.add_element(element)
+
+    def get_basket(self):
+        return self.basket 
+
+    def create_order(self):
+        if not (self.get_basket()):
+            return "Корзина пуста, обновите информацию"
+        return Order(self.uuid, self.get_basket().get_elements_ids())
+
+    def get_orders(self):
+        return ""
 
 class Shop:
     categories = []
@@ -137,7 +154,8 @@ class Shop:
     def item_create(self, i: Item):
         self.store.items.insert_one({
             "title": i.title, "category_title": i.category_title,
-            "price": i.price, "capacity": i.capacity, "stars": i.stars
+            "price": i.price, "capacity": i.capacity, "stars": i.stars,
+            "photo": i.photo, "description": i.description
         })
 
     def category_delete(self, _id):

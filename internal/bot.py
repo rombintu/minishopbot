@@ -11,6 +11,7 @@ from internal import content
 from internal import keyboards as kb
 from internal.logger import new_logger
 from internal.store.shop import Shop, User, Basket, Item, Category
+from bson import ObjectId
 
 load_dotenv()
 
@@ -36,6 +37,13 @@ def handle_message_menu(m):
         reply_markup=kb.get_keyboard_categories(shop.get_categories()),
         parse_mode=content.markdown
         )
+    user = shop.login(User(m.chat.id, m.from_user.first_name))
+    basket = user.get_basket()
+    bot.send_message(
+        m.chat.id, basket.get_content(),
+        parse_mode=content.markdown, 
+        reply_markup=kb.get_keyboard_basket(basket)
+    )
 
 # TODO
 @bot.message_handler(commands=['basket'])
@@ -129,10 +137,39 @@ def servers_callback(c: types.CallbackQuery):
             user = shop.login(User(c.from_user.id))
             # TODO
             user.to_basket(item)
-            bot.send_message(c.message.chat.id, f"/basket 🛒 + {item.capacity} *{item.title}*", parse_mode=content.markdown)
-            
-        # case ["item", "id", _]:
-        #     bot.edit_message_text(content.get_last_update_format(),
-        #         c.from_user.id, c.message.id, 
-        #         reply_markup=kb.get_keyboard_items(), parse_mode=content.markdown)
+            # bot.send_message(c.message.chat.id, f"/basket 🛒 + {item.capacity} *{item.title}*", parse_mode=content.markdown)
+        
+        case ["basket", "clear"]:
+            user = shop.login(User(c.message.chat.id))
+            user.basket.clear()
+            bot.edit_message_text(
+                user.get_basket().get_content(), c.message.chat.id, c.message.id,
+                reply_markup=kb.get_keyboard_basket(user.get_basket())
+            )
+        case ["basket", "remove", _]:
+            item_id = data[-1]
+            user = shop.login(User(c.message.chat.id))
+            user.basket.remove(item_id)
+            bot.edit_message_text(
+                user.get_basket().get_content(), c.message.chat.id, c.message.id,
+                reply_markup=kb.get_keyboard_basket(user.get_basket())
+            )
+        case ["item", "id", _]:
+            item_id = data[-1]
+            item = shop.store.items.find_one({"_id": ObjectId(item_id)})
+            keyboard = kb.get_keyboard_hide_item()
+            if not item:
+                bot.send_message(c.message.chat.id, "Товар был изменен или удален, обновите каталог")
+                return
+            elif not item["photo"]:
+                bot.send_message(c.message.chat.id, item["description"], reply_markup=keyboard)
+                return
+            bot.send_photo(c.message.chat.id, item["photo"], caption=item["description"], reply_markup=keyboard)
+        case ["item", "hide"]:
+            bot.delete_message(c.message.chat.id, c.message.id, timeout=1)
+        case ["basket", "order", "create"]:
+            user = shop.login(User(c.message.chat.id))
+            order = user.create_order()
+            shop.store.orders.insert_one(order.__dict__)
+            bot.send_message(c.message.chat.id, "Заявка на оформление отправлена")
     return

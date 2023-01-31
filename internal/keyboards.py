@@ -38,7 +38,7 @@ def get_keyboard_items(items, category_id, start_i=0):
             types.InlineKeyboardButton(
                 # text=f"{items[i].title}", 
                  text=f"{items[i].title}", 
-                callback_data=f"item_id_{category_id}_{items[i]._id}"),
+                callback_data=f"item_id_{items[i]._id}"),
             types.InlineKeyboardButton(
                 text=f"{items[i].capacity} 📦 {items[i].price:,} ₽", 
                 callback_data=f"item_tobasket_{category_id}_{items[i]._id}")
@@ -58,8 +58,8 @@ def get_keyboard_items(items, category_id, start_i=0):
 def get_keyboard_basket(basket, start_i=0):
     keyboard = types.InlineKeyboardMarkup()
     btn_refresh = types.InlineKeyboardButton(text="Обновить 🔄", callback_data="refresh_basket")
-    btn_create_order = types.InlineKeyboardButton(text="Оформить 📩", callback_data=f"basket_order_create_{basket.user_id}")
-    btn_clear = types.InlineKeyboardButton(text="Очистить ❌", callback_data=f"basket_clear_{basket.user_id}")
+    btn_create_order = types.InlineKeyboardButton(text="Оформить 📩", callback_data="basket_order_create")
+    btn_clear = types.InlineKeyboardButton(text="Очистить ❌", callback_data="basket_clear")
     elements = basket.get_elements()
     if not elements:
         keyboard.add(btn_refresh)
@@ -93,4 +93,13 @@ def get_keyboard_basket(basket, start_i=0):
         keyboard.add(btn_next_l, btn_refresh, btn_next_r)
         keyboard.add(btn_create_order, btn_clear)
     
+    return keyboard
+
+def get_keyboard_hide_item():
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton(
+            text="Скрыть 👀", 
+            callback_data="item_hide")
+        )
     return keyboard
