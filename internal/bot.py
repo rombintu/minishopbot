@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from internal import content
 from internal import keyboards as kb
 from internal.logger import new_logger
-from internal.store.shop import Shop, User, Basket, Item, Category
+from internal.store.shop import Shop, User
 from bson import ObjectId
 
 load_dotenv()
@@ -19,15 +19,8 @@ bot = telebot.TeleBot(os.getenv("BOT_TOKEN"), parse_mode=None)
 shop = Shop(os.getenv("DATABASE"))
 log = new_logger()
 
-# @bot.message_handler(commands=['start', 'help'])
-# def handle_message_start(m):
-#     bot.send_message(
-#         m.chat.id, 
-#         content.messages["start"]
-#     )
-
 @bot.message_handler(commands=['shop', 'start'])
-def handle_message_menu(m):
+def handle_message_shop(m):
     if not shop.categories:
         bot.send_message(m.chat.id, content.error["no_data"])
         return
@@ -47,7 +40,7 @@ def handle_message_menu(m):
 
 # TODO
 @bot.message_handler(commands=['basket'])
-def handle_message_menu(m):
+def handle_message_basket(m):
     user = shop.login(User(m.chat.id, m.from_user.first_name))
     basket = user.get_basket()
     bot.send_message(
@@ -55,6 +48,24 @@ def handle_message_menu(m):
         parse_mode=content.markdown, 
         reply_markup=kb.get_keyboard_basket(basket)
     )
+
+@bot.message_handler(commands=['orders'])
+def handle_message_order(m):
+    orders = shop.get_orders_info(m.chat.id)
+    if not orders:
+        bot.send_message(
+            m.chat.id, "Заказы не найдены, посетите магазин /shop",
+            parse_mode=content.markdown, 
+            reply_markup=kb.get_keyboard_hide_item()
+        )
+        return
+    for order in orders:
+        bot.send_message(
+            m.chat.id, order,
+            parse_mode=content.markdown, 
+            reply_markup=kb.get_keyboard_hide_item()
+        )
+
 
 @bot.callback_query_handler(func=lambda c: c.data)
 def servers_callback(c: types.CallbackQuery):
@@ -71,6 +82,9 @@ def servers_callback(c: types.CallbackQuery):
             shop.refresh_items()
             _id = data[-1]
             category = shop.get_cat_by_id(_id)
+            if not category:
+                bot.send_message(c.message.chat.id, "Данной категории больше не существует, обновите список")
+                return
             items = shop.get_items_by_category_id(category.title)
             bot.edit_message_text(
                 f"{category.emoji} *{category.title.title()}*" + content.get_last_update_format(),
@@ -120,6 +134,9 @@ def servers_callback(c: types.CallbackQuery):
             start_i = int(data[-2])
             category_id = data[-3]
             category = shop.get_cat_by_id(category_id)
+            if not category:
+                bot.send_message(c.message.chat.id, "Данной категории больше не существует, обновите список")
+                return
             if start_i <= 0: start_i = 0
             bot.edit_message_reply_markup(
                 c.from_user.id, c.message.id, 
@@ -133,7 +150,13 @@ def servers_callback(c: types.CallbackQuery):
             category_id = data[-2]
             item_id = data[-1]
             category = shop.get_cat_by_id(category_id)
+            if not category:
+                bot.send_message(c.message.chat.id, "Данной категории больше не существует, обновите список")
+                return
             item = shop.get_item_by_id(category.title, item_id)
+            if not item:
+                bot.send_message(c.message.chat.id, "Данного товара больше не существует, обновите список")
+                return
             user = shop.login(User(c.from_user.id))
             # TODO
             user.to_basket(item)
@@ -170,6 +193,9 @@ def servers_callback(c: types.CallbackQuery):
         case ["basket", "order", "create"]:
             user = shop.login(User(c.message.chat.id))
             order = user.create_order()
-            shop.store.orders.insert_one(order.__dict__)
-            bot.send_message(c.message.chat.id, "Заявка на оформление отправлена")
+            mess = "Корзина пуста, обновите информацию"
+            if order:
+                mess = "Заявка на оформление отправлена /orders"
+                shop.store.orders.insert_one(order.__dict__)
+            bot.send_message(c.message.chat.id, mess)
     return

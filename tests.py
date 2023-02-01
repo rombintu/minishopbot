@@ -20,13 +20,13 @@ class TestMain(unittest.TestCase):
         print(shop.categories, shop.items)
 
     def test_create_item(self):
-        image_data = io.BytesIO()
-        image = Image.open("./images/image.png")
-        image.save(image_data, format="PNG")
+        # image_data = io.BytesIO()
+        # image = Image.open("./images/image.png")
+        # image.save(image_data, format="PNG")
         shop.item_create(
             Item(
-                title="item_testing", category_title="cat18", 
-                price=1250, photo=image_data.getvalue(), description="testing1\ntesting2"
+                title="item_testing2", category_title="cat18", 
+                price=250, photo=None, description="testing3\ntesting4"
                 )
             )
 

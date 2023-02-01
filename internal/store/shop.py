@@ -3,7 +3,9 @@ from pymongo import MongoClient
 from datetime import datetime
 from internal.logger import new_logger 
 from bson import ObjectId
+import locale
 
+locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 class Category:
     def __init__(self, title, emoji, _id=ObjectId()):
@@ -36,7 +38,13 @@ class Basket:
         return self.elements
 
     def get_elements_ids(self):
-        return [{str(elem["id"]): elem["count"]} for elem in self.get_elements()]
+        return [
+            {
+                'i_id': str(elem["id"]), 
+                'i_title': elem["data"].title, 
+                'i_count': elem["count"],
+                'i_sum': elem["data"].price * elem["count"]
+            } for elem in self.get_elements()]
 
     def sum(self):
         s = 0
@@ -79,8 +87,11 @@ class Order:
     def __init__(self, uuid, items):
         self.uuid = uuid
         self.items = items
-        self.create_at = datetime.now()
+        self.created_at = datetime.now()
         self.completed_at = None
+        self.sum = 0
+        for i in self.items:
+            self.sum += i["i_sum"]
 
 class User:
     def __init__(self, uuid=0, username="", _id=ObjectId()):
@@ -97,11 +108,8 @@ class User:
 
     def create_order(self):
         if not (self.get_basket()):
-            return "Корзина пуста, обновите информацию"
+            return None
         return Order(self.uuid, self.get_basket().get_elements_ids())
-
-    def get_orders(self):
-        return ""
 
 class Shop:
     categories = []
@@ -199,3 +207,18 @@ class Shop:
                 return item
         return None
 
+    def get_orders_info(self, uuid):
+        orders = self.store.orders.find({"uuid": uuid})
+        all_orders = []
+        if not orders:
+            return all_orders
+        for o in orders:
+            buff = f"Заказ №`{str(o['_id'])}`\n"
+            buff += f"Создан _{o['created_at'].strftime('%d.%m.%Y %H:%M')}_\n"
+            buff += "Статус: "
+            buff += "*В работе*" if not o["completed_at"] else f"*Закрыт* {o['completed_at'].strftime('%d.%m.%Y %H:%M')}" 
+            for i in  o['items']:
+                buff += f"\n\t- *{i['i_title']}* x{i['i_count']} - {i['i_sum']} ₽"
+            buff += f"\nСумма заказа: {o['sum']} ₽\n"
+            all_orders.append(buff)
+        return all_orders
